@@ -22,6 +22,10 @@ namespace WifiAutoLogin
         {
             base.OnStartup(e);
 
+            // Initialize Logger
+            LoggerService.Initialize(_configService.CurrentConfig.EnableLogging);
+            LoggerService.Log("Application Started");
+
             // Initialize Tray Icon
             _trayIcon = new TrayIconService(OpenSettings, ExitApplication);
             
@@ -36,7 +40,7 @@ namespace WifiAutoLogin
             _heartbeatTimer.Tick += HeartbeatTimer_Tick;
 
             // Initial Check (if already connected)
-            Task.Run(async () => 
+            Task.Run(() => 
             {
                 var ssid = _networkMonitor.GetConnectedSsid();
                 if (!string.IsNullOrEmpty(ssid)) OnWifiConnected(ssid);
@@ -57,15 +61,20 @@ namespace WifiAutoLogin
             _trayIcon?.ShowMessage("Network Detected", $"Checking connection for {ssid}...", System.Windows.Forms.ToolTipIcon.Info);
 
             bool isOnline = await _connectivityChecker.IsConnectedToInternetAsync();
-            if (isOnline)
+            var connectivityLevel = _connectivityChecker.IsSystemPossiblyUnderCaptivePortal();
+            LoggerService.Log($"Network detected: {ssid}. Online Status: {isOnline}, System Status: {connectivityLevel}");
+
+            if (isOnline && connectivityLevel != global::Windows.Networking.Connectivity.NetworkConnectivityLevel.ConstrainedInternetAccess)
             {
                  _trayIcon?.ShowMessage("Online", $"{ssid} is already online.", System.Windows.Forms.ToolTipIcon.Info);
+                 LoggerService.Log($"{ssid} is already online. Starting Heartbeat.");
                  StartHeartbeat();
                  return;
             }
 
-            // Not online, try login
+            // Not online or Captive Portal detected, try login
              _trayIcon?.ShowMessage("Auto Login", $"Attempting to login to {ssid}...", System.Windows.Forms.ToolTipIcon.Info);
+             LoggerService.Log($"Attempting login for {ssid}...");
             
             // Detect URL if needed
             string targetUrl = config.LoginUrl;
@@ -81,6 +90,7 @@ namespace WifiAutoLogin
             }
 
             bool result = await _loginService.PerformLoginAsync(config, targetUrl);
+            LoggerService.Log($"Login attempt finished. Result: {result}");
             
             if (result)
             {
@@ -98,12 +108,14 @@ namespace WifiAutoLogin
             else
             {
                 _trayIcon?.ShowMessage("Failed", "Auto login failed.", System.Windows.Forms.ToolTipIcon.Error);
+                LoggerService.Log("Auto login failed.");
             }
         }
 
         private void OnDisconnected()
         {
             _trayIcon?.SetStatus(false, "Disconnected");
+            LoggerService.Log("Network Disconnected");
             StopHeartbeat();
         }
 

@@ -21,7 +21,9 @@ namespace WifiAutoLogin
         {
             NetworksList.ItemsSource = null;
             NetworksList.ItemsSource = _configService.CurrentConfig.Networks;
+            NetworksList.ItemsSource = _configService.CurrentConfig.Networks;
             ChkAutoStart.IsChecked = _configService.CurrentConfig.AutoStart;
+            ChkEnableLogging.IsChecked = _configService.CurrentConfig.EnableLogging;
         }
 
         private void NetworksList_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -32,6 +34,8 @@ namespace WifiAutoLogin
                 TxtSsid.Text = config.Ssid;
                 TxtUsername.Text = config.Username;
                 TxtLoginUrl.Text = config.LoginUrl;
+                TxtUsernameSelector.Text = config.UsernameSelector;
+                TxtPasswordSelector.Text = config.PasswordSelector;
                 TxtPassword.Password = _configService.DecryptPassword(config.EncryptedPassword);
                 TxtSsid.IsReadOnly = true; 
             }
@@ -56,6 +60,8 @@ namespace WifiAutoLogin
             TxtUsername.Text = "";
             TxtPassword.Password = "";
             TxtLoginUrl.Text = "";
+            TxtUsernameSelector.Text = "";
+            TxtPasswordSelector.Text = "";
             TxtSsid.IsReadOnly = false;
         }
 
@@ -76,7 +82,9 @@ namespace WifiAutoLogin
                     Ssid = ssid,
                     Username = TxtUsername.Text.Trim(),
                     EncryptedPassword = _configService.EncryptPassword(TxtPassword.Password),
-                    LoginUrl = TxtLoginUrl.Text.Trim()
+                    LoginUrl = TxtLoginUrl.Text.Trim(),
+                    UsernameSelector = TxtUsernameSelector.Text.Trim(),
+                    PasswordSelector = TxtPasswordSelector.Text.Trim()
                 };
                 _configService.CurrentConfig.Networks.Add(newConfig);
                 _selectedConfig = newConfig; // Select it
@@ -88,6 +96,8 @@ namespace WifiAutoLogin
                 _selectedConfig.Username = TxtUsername.Text.Trim();
                 _selectedConfig.EncryptedPassword = _configService.EncryptPassword(TxtPassword.Password);
                 _selectedConfig.LoginUrl = TxtLoginUrl.Text.Trim();
+                _selectedConfig.UsernameSelector = TxtUsernameSelector.Text.Trim();
+                _selectedConfig.PasswordSelector = TxtPasswordSelector.Text.Trim();
             }
 
             _configService.SaveConfig();
@@ -117,6 +127,15 @@ namespace WifiAutoLogin
             _configService.CurrentConfig.AutoStart = ChkAutoStart.IsChecked ?? false;
             _configService.SaveConfig();
             // TODO: Implement registry key toggle for actual auto-start
+        }
+
+        private void ChkEnableLogging_Changed(object sender, RoutedEventArgs e)
+        {
+            if (_configService == null) return;
+            bool isEnabled = ChkEnableLogging.IsChecked ?? false;
+            _configService.CurrentConfig.EnableLogging = isEnabled;
+            _configService.SaveConfig();
+            LoggerService.Initialize(isEnabled);
         }
     }
 }

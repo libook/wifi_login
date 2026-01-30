@@ -2,6 +2,7 @@ using System;
 using System.Net.Http;
 using System.Net.NetworkInformation;
 using System.Threading.Tasks;
+using Windows.Networking.Connectivity;
 
 namespace WifiAutoLogin.Services
 {
@@ -13,6 +14,17 @@ namespace WifiAutoLogin.Services
         {
             try
             {
+                // Trusted System Check
+                var connectivityLevel = IsSystemPossiblyUnderCaptivePortal();
+                // If system explicitly says "Constrained", we are in captive portal -> Not fully connected
+                if (connectivityLevel == NetworkConnectivityLevel.ConstrainedInternetAccess) return false;
+                
+                // If system says "InternetAccess", we trust it generally, but Double Check with Ping
+                if (connectivityLevel == NetworkConnectivityLevel.InternetAccess)
+                {
+                     // Optional: Double check because sometimes OS is slow to update
+                }
+
                 // Try Ping First
                 using var ping = new Ping();
                 var reply = await ping.SendPingAsync("8.8.8.8", 2000);
@@ -22,9 +34,26 @@ namespace WifiAutoLogin.Services
                 var response = await _httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Head, "http://www.baidu.com"));
                 return response.IsSuccessStatusCode;
             }
-            catch
+            catch (Exception ex)
             {
+                LoggerService.LogError("Connectivity Check Failed", ex);
                 return false;
+            }
+        }
+
+        public NetworkConnectivityLevel IsSystemPossiblyUnderCaptivePortal()
+        {
+            try
+            {
+                var profile = NetworkInformation.GetInternetConnectionProfile();
+                if (profile == null) return NetworkConnectivityLevel.None;
+                
+                return profile.GetNetworkConnectivityLevel();
+            }
+            catch (Exception ex)
+            {
+                LoggerService.LogError("WinRT Connectivity Check Failed", ex);
+                return NetworkConnectivityLevel.None;
             }
         }
 

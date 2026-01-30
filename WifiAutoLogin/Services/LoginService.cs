@@ -62,8 +62,27 @@ namespace WifiAutoLogin.Services
                                             element.dispatchEvent(new Event('input', {{ bubbles: true }}));
                                         }}
 
-                                        var userInputs = document.querySelectorAll('input[type=text], input[type=email], input[name*=user], input[id*=user]');
-                                        var passInputs = document.querySelectorAll('input[type=password], input[name*=pass], input[id*=pass]');
+                                        // Selectors from config
+                                        var userSelector = '{config.UsernameSelector}';
+                                        var passSelector = '{config.PasswordSelector}';
+
+                                        var userInputs = [];
+                                        var passInputs = [];
+
+                                        if (userSelector && document.querySelector(userSelector)) {{
+                                            userInputs = [document.querySelector(userSelector)];
+                                        }} else {{
+                                            // Fallback
+                                            userInputs = document.querySelectorAll('input[type=text], input[type=email], input[name*=user], input[id*=user]');
+                                        }}
+
+                                        if (passSelector && document.querySelector(passSelector)) {{
+                                            passInputs = [document.querySelector(passSelector)];
+                                        }} else {{
+                                            // Fallback
+                                            passInputs = document.querySelectorAll('input[type=password], input[name*=pass], input[id*=pass]');
+                                        }}
+
                                         var buttons = document.querySelectorAll('button, input[type=submit], a[href*=login]');
 
                                         if (userInputs.length > 0) setNativeValue(userInputs[0], '{config.Username}');
