@@ -66,6 +66,7 @@ namespace WifiAutoLogin.Services
                                         // Selectors from config
                                         var userSelector = '{config.UsernameSelector}';
                                         var passSelector = '{config.PasswordSelector}';
+                                        var btnSelector = '{config.LoginButtonSelector}';
 
                                         var userInputs = [];
                                         var passInputs = [];
@@ -84,12 +85,16 @@ namespace WifiAutoLogin.Services
                                             passInputs = document.querySelectorAll('input[type=password], input[name*=pass], input[id*=pass]');
                                         }}
 
-                                        var buttons = document.querySelectorAll('button, input[type=submit], a[href*=login]');
-
                                         if (userInputs.length > 0) setNativeValue(userInputs[0], '{config.Username}');
                                         if (passInputs.length > 0) setNativeValue(passInputs[0], '{password}');
                                         
                                         setTimeout(() => {{
+                                            if (btnSelector && document.querySelector(btnSelector)) {{
+                                                document.querySelector(btnSelector).click();
+                                                return;
+                                            }}
+
+                                            var buttons = document.querySelectorAll('button, input[type=submit], a[href*=login]');
                                             // Try to find a submit button
                                             for(var btn of buttons) {{
                                                 if(btn.innerText && (btn.innerText.toLowerCase().includes('login') || btn.innerText.toLowerCase().includes('connect') || btn.innerText.toLowerCase().includes('登录'))) {{

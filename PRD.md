@@ -23,9 +23,12 @@
 * **字段定义**：
 * `SSID` (Wi-Fi名称，必填，唯一键)
 * `Username` (登录用户名，必填)
-* `Password` (登录密码，必填，需本地加密存储)
-* `Login URL` (选填，若不填则通过自动探测获取)
-* `Show Login Window` (全局设置，布尔值，用于调试。开启后将显示登录过程的 Webview 界面)
+    * `Password` (登录密码，必填，需本地加密存储)
+    * `Login URL` (选填，若不填则通过自动探测获取)
+    * `Username Selector` (选填，用户名输入框的 CSS 选择器)
+    * `Password Selector` (选填，密码输入框的 CSS 选择器)
+    * `Login Button Selector` (选填，登录按钮的 CSS 选择器)
+    * `Show Login Window` (全局设置，布尔值，用于调试。开启后将显示登录过程的 Webview 界面)
 
 
 * **开机自启**：软件需默认设置为随 Windows 用户登录启动，并最小化至托盘。
@@ -73,9 +76,9 @@
 1. 在内存中创建一个隐藏的浏览器实例（用户不可见）。
 2. 导航至探测到的登录页面 URL。
 3. 等待页面 DOM 加载完成（`DomContentLoaded`）。
-4. **注入脚本**：根据 HTML 元素的 `name` 或 `id` 属性（如 `user`, `username`, `pwd`, `password` 等常见字段）自动查找输入框。
+4. **注入脚本**：根据配置好的 CSS 选择器查找输入框；若未配置，则尝试根据 HTML 元素的 `name` 或 `id` 属性（如 `user`, `username`, `pwd`, `password` 等常见字段）自动查找。
 5. 填充配置中的用户名和密码。
-6. 模拟点击“登录/连接/Login”按钮。
+6. **执行点击**：根据配置好的 `Login Button Selector` 查找并点击登录按钮；若未配置，则通过匹配按钮文字（如“登录/连接/Login”）自动查找。
 7. **结果校验**：等待页面跳转或检测特定元素（如“注销”按钮出现），或再次执行“轻量级探测”确认外网是否连通。
 8. **调试模式**：若用户开启了 `Show Login Window` 设置，浏览器窗口将以可见模式弹出（而非隐藏），并自动居中显示。在调试模式下，登录后的保持时间将自动延长（如从 5s 延至 15s），以便用户观察执行结果。
 9. 销毁浏览器实例（释放内存）。
@@ -106,6 +109,9 @@
       "ssid": "Campus-Net",
       "username": "student_01",
       "encryptedPassword": "BASE64_ENCRYPTED_STRING...",
+      "usernameSelector": "#username",
+      "passwordSelector": "#password",
+      "loginButtonSelector": ".login-btn",
       "strategy": "default" 
     },
     {

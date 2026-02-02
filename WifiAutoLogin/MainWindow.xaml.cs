@@ -37,6 +37,7 @@ namespace WifiAutoLogin
                 TxtLoginUrl.Text = config.LoginUrl;
                 TxtUsernameSelector.Text = config.UsernameSelector;
                 TxtPasswordSelector.Text = config.PasswordSelector;
+                TxtLoginButtonSelector.Text = config.LoginButtonSelector;
                 TxtPassword.Password = _configService.DecryptPassword(config.EncryptedPassword);
                 TxtSsid.IsReadOnly = true; 
             }
@@ -63,6 +64,7 @@ namespace WifiAutoLogin
             TxtLoginUrl.Text = "";
             TxtUsernameSelector.Text = "";
             TxtPasswordSelector.Text = "";
+            TxtLoginButtonSelector.Text = "";
             TxtSsid.IsReadOnly = false;
         }
 
@@ -85,7 +87,8 @@ namespace WifiAutoLogin
                     EncryptedPassword = _configService.EncryptPassword(TxtPassword.Password),
                     LoginUrl = TxtLoginUrl.Text.Trim(),
                     UsernameSelector = TxtUsernameSelector.Text.Trim(),
-                    PasswordSelector = TxtPasswordSelector.Text.Trim()
+                    PasswordSelector = TxtPasswordSelector.Text.Trim(),
+                    LoginButtonSelector = TxtLoginButtonSelector.Text.Trim()
                 };
                 _configService.CurrentConfig.Networks.Add(newConfig);
                 _selectedConfig = newConfig; // Select it
@@ -99,6 +102,7 @@ namespace WifiAutoLogin
                 _selectedConfig.LoginUrl = TxtLoginUrl.Text.Trim();
                 _selectedConfig.UsernameSelector = TxtUsernameSelector.Text.Trim();
                 _selectedConfig.PasswordSelector = TxtPasswordSelector.Text.Trim();
+                _selectedConfig.LoginButtonSelector = TxtLoginButtonSelector.Text.Trim();
             }
 
             _configService.SaveConfig();

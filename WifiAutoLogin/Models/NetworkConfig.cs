@@ -10,6 +10,7 @@ namespace WifiAutoLogin.Models
         public string LoginUrl { get; set; } = string.Empty;
         public string UsernameSelector { get; set; } = string.Empty;
         public string PasswordSelector { get; set; } = string.Empty;
+        public string LoginButtonSelector { get; set; } = string.Empty;
     }
 
     public class AppConfig
