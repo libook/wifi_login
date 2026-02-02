@@ -16,6 +16,7 @@ namespace WifiAutoLogin.Models
     {
         public bool AutoStart { get; set; } = true;
         public bool EnableLogging { get; set; } = false;
+        public bool ShowBrowser { get; set; } = false;
         public int HeartbeatInterval { get; set; } = 60;
         public List<NetworkConfig> Networks { get; set; } = new List<NetworkConfig>();
     }

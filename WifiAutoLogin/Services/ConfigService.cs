@@ -10,7 +10,7 @@ namespace WifiAutoLogin.Services
     public class ConfigService
     {
         private readonly string _configPath;
-        public AppConfig CurrentConfig { get; private set; }
+        public AppConfig CurrentConfig { get; private set; } = new AppConfig();
 
         public ConfigService()
         {

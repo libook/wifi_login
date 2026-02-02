@@ -62,6 +62,7 @@
         </StackPanel>
         
         <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+            <CheckBox x:Name="ChkShowBrowser" Content="Show Login Window (Debug)" VerticalAlignment="Center" Margin="0,0,10,0" Checked="ChkShowBrowser_Changed" Unchecked="ChkShowBrowser_Changed"/>
             <CheckBox x:Name="ChkEnableLogging" Content="Enable Log Recording" VerticalAlignment="Center" Margin="0,0,10,0" Checked="ChkEnableLogging_Changed" Unchecked="ChkEnableLogging_Changed"/>
             <CheckBox x:Name="ChkAutoStart" Content="Run on Startup" VerticalAlignment="Center" Margin="0,0,10,0" Checked="ChkAutoStart_Changed" Unchecked="ChkAutoStart_Changed"/>
         </StackPanel>

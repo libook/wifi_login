@@ -16,7 +16,9 @@ namespace WifiAutoLogin.Services
                 HiddenBrowserWindow? window = null;
                 try
                 {
+                    var configService = new ConfigService();
                     window = new HiddenBrowserWindow();
+                    window.SetDebugMode(configService.CurrentConfig.ShowBrowser);
                     window.Show(); // Need to show for WebView to work
                     
                     var webView = window.WebView;
@@ -42,7 +44,6 @@ namespace WifiAutoLogin.Services
                                 await Task.Delay(2000); // Wait for DOM
 
                                 // Decrypt password
-                                var configService = new ConfigService();
                                 var password = configService.DecryptPassword(config.EncryptedPassword);
                                 
                                 // Script to find and fill form
@@ -109,7 +110,7 @@ namespace WifiAutoLogin.Services
                                 await webView.ExecuteScriptAsync(script);
                                 
                                 // Wait a bit for post-login
-                                await Task.Delay(5000);
+                                await Task.Delay(configService.CurrentConfig.ShowBrowser ? 15000 : 5000);
                                 completionSource.TrySetResult(true);
                             }
                             catch

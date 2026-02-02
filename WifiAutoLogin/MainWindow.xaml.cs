@@ -24,6 +24,7 @@ namespace WifiAutoLogin
             NetworksList.ItemsSource = _configService.CurrentConfig.Networks;
             ChkAutoStart.IsChecked = _configService.CurrentConfig.AutoStart;
             ChkEnableLogging.IsChecked = _configService.CurrentConfig.EnableLogging;
+            ChkShowBrowser.IsChecked = _configService.CurrentConfig.ShowBrowser;
         }
 
         private void NetworksList_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -136,6 +137,13 @@ namespace WifiAutoLogin
             _configService.CurrentConfig.EnableLogging = isEnabled;
             _configService.SaveConfig();
             LoggerService.Initialize(isEnabled);
+        }
+
+        private void ChkShowBrowser_Changed(object sender, RoutedEventArgs e)
+        {
+            if (_configService == null) return;
+            _configService.CurrentConfig.ShowBrowser = ChkShowBrowser.IsChecked ?? false;
+            _configService.SaveConfig();
         }
     }
 }
