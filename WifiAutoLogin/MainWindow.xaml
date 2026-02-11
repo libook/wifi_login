@@ -6,7 +6,8 @@
         xmlns:local="clr-namespace:WifiAutoLogin"
         mc:Ignorable="d"
         Title="Wi-Fi Auto Login Assistant" Height="600" Width="600" MinHeight="500"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        Icon="WifiAutoLogin.ico">
     <Grid Margin="10">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="200"/>

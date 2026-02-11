@@ -15,9 +15,12 @@ namespace WifiAutoLogin.Services
             _onOpenSettings = onOpenSettings;
             _onExit = onExit;
 
+            string iconPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "WifiAutoLogin.ico");
             _notifyIcon = new NotifyIcon
             {
-                Icon = SystemIcons.Application,
+                Icon = System.IO.File.Exists(iconPath) 
+                    ? new Icon(iconPath) 
+                    : SystemIcons.Application,
                 Visible = true,
                 Text = "Wi-Fi Auto Login"
             };
