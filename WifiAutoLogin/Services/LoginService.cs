@@ -41,7 +41,7 @@ namespace WifiAutoLogin.Services
                         {
                             try
                             {
-                                await Task.Delay(2000); // Wait for DOM
+                                await Task.Delay(3000); // Wait for DOM
 
                                 // Decrypt password
                                 var password = configService.DecryptPassword(config.EncryptedPassword);
@@ -49,66 +49,115 @@ namespace WifiAutoLogin.Services
                                 // Script to find and fill form
                                 string script = $@"
                                     (function() {{
-                                        function setNativeValue(element, value) {{
-                                            const valueSetter = Object.getOwnPropertyDescriptor(element, 'value').set;
-                                            const prototype = Object.getPrototypeOf(element);
-                                            const prototypeValueSetter = Object.getOwnPropertyDescriptor(prototype, 'value').set;
+                                        try {{
+                                            console.log('WifiAutoLogin: Starting script execution...');
                                             
-                                            if (valueSetter && valueSetter !== prototypeValueSetter) {{
-                                                prototypeValueSetter.call(element, value);
+                                            function setNativeValue(element, value) {{
+                                                var descriptor = Object.getOwnPropertyDescriptor(element, 'value');
+                                                var valueSetter = descriptor ? descriptor.set : undefined;
+                                                
+                                                var prototype = Object.getPrototypeOf(element);
+                                                var protoDescriptor = Object.getOwnPropertyDescriptor(prototype, 'value');
+                                                var prototypeValueSetter = protoDescriptor ? protoDescriptor.set : undefined;
+                                                
+                                                if (valueSetter && valueSetter !== prototypeValueSetter) {{
+                                                    prototypeValueSetter.call(element, value);
+                                                }} else if (prototypeValueSetter) {{
+                                                    prototypeValueSetter.call(element, value);
+                                                }} else {{
+                                                    element.value = value;
+                                                }}
+                                                
+                                                element.dispatchEvent(new Event('input', {{ bubbles: true }}));
+                                                element.dispatchEvent(new Event('change', {{ bubbles: true }}));
+                                                element.dispatchEvent(new Event('blur', {{ bubbles: true }}));
+                                            }}
+
+                                            // Selectors from config
+                                            var userSelector = '{config.UsernameSelector}';
+                                            var passSelector = '{config.PasswordSelector}';
+                                            var btnSelector = '{config.LoginButtonSelector}';
+
+                                            var userInputs = [];
+                                            var passInputs = [];
+
+                                            if (userSelector && document.querySelector(userSelector)) {{
+                                                userInputs = [document.querySelector(userSelector)];
                                             }} else {{
-                                                valueSetter.call(element, value);
+                                                // Fallback - prioritize 'username', 'user', 'account' for ID/Name
+                                                var allInputs = document.querySelectorAll('input[type=text], input[type=email], input[name*=user], input[id*=user], input[id*=account]');
+                                                // Convert to array to filter/sort if needed, but for now take all
+                                                userInputs = Array.from(allInputs);
+                                            }}
+
+                                            if (passSelector && document.querySelector(passSelector)) {{
+                                                passInputs = [document.querySelector(passSelector)];
+                                            }} else {{
+                                                // Fallback
+                                                passInputs = document.querySelectorAll('input[type=password], input[name*=pass], input[id*=pass], input[name*=pwd]');
+                                            }}
+
+                                            // FILTERING: Try to find the *best* visible inputs, or handle the specific hidden password case
+                                            
+                                            // 1. Target the specific structure of the test page (hidden pwd input + text placeholder)
+                                            if (passInputs.length > 0) {{
+                                                var pwd = passInputs[0];
+                                                if (window.getComputedStyle(pwd).display === 'none') {{
+                                                    // Look for sibling placeholder
+                                                    var sibling = pwd.previousElementSibling || pwd.nextElementSibling;
+                                                    if (sibling && sibling.tagName === 'INPUT') {{
+                                                        console.log('WifiAutoLogin: Found hidden password pattern. Swapping.');
+                                                        sibling.style.display = 'none';
+                                                        pwd.style.display = 'inline-block';
+                                                        // Ensure the password field is visible before interacting
+                                                        pwd.type = 'password'; 
+                                                    }}
+                                                }}
+                                            }}
+
+                                            if (userInputs.length > 0) {{
+                                                var u = userInputs[0];
+                                                u.style.border = '2px solid red'; // Visual Feedback
+                                                u.focus();
+                                                setNativeValue(u, '{config.Username}');
+                                                u.blur();
+                                            }}
+
+                                            if (passInputs.length > 0) {{
+                                                var p = passInputs[0];
+                                                p.style.border = '2px solid red'; // Visual Feedback
+                                                p.focus();
+                                                setNativeValue(p, '{password}');
+                                                p.blur();
                                             }}
                                             
-                                            element.dispatchEvent(new Event('input', {{ bubbles: true }}));
-                                        }}
-
-                                        // Selectors from config
-                                        var userSelector = '{config.UsernameSelector}';
-                                        var passSelector = '{config.PasswordSelector}';
-                                        var btnSelector = '{config.LoginButtonSelector}';
-
-                                        var userInputs = [];
-                                        var passInputs = [];
-
-                                        if (userSelector && document.querySelector(userSelector)) {{
-                                            userInputs = [document.querySelector(userSelector)];
-                                        }} else {{
-                                            // Fallback
-                                            userInputs = document.querySelectorAll('input[type=text], input[type=email], input[name*=user], input[id*=user]');
-                                        }}
-
-                                        if (passSelector && document.querySelector(passSelector)) {{
-                                            passInputs = [document.querySelector(passSelector)];
-                                        }} else {{
-                                            // Fallback
-                                            passInputs = document.querySelectorAll('input[type=password], input[name*=pass], input[id*=pass]');
-                                        }}
-
-                                        if (userInputs.length > 0) setNativeValue(userInputs[0], '{config.Username}');
-                                        if (passInputs.length > 0) setNativeValue(passInputs[0], '{password}');
-                                        
-                                        setTimeout(() => {{
-                                            if (btnSelector && document.querySelector(btnSelector)) {{
-                                                document.querySelector(btnSelector).click();
-                                                return;
-                                            }}
-
-                                            var buttons = document.querySelectorAll('button, input[type=submit], a[href*=login]');
-                                            // Try to find a submit button
-                                            for(var btn of buttons) {{
-                                                if(btn.innerText && (btn.innerText.toLowerCase().includes('login') || btn.innerText.toLowerCase().includes('connect') || btn.innerText.toLowerCase().includes('登录'))) {{
-                                                    btn.click();
+                                            setTimeout(() => {{
+                                                if (btnSelector && document.querySelector(btnSelector)) {{
+                                                    document.querySelector(btnSelector).click();
                                                     return;
                                                 }}
-                                                if(btn.value && (btn.value.toLowerCase().includes('login') || btn.value.toLowerCase().includes('connect'))) {{
-                                                    btn.click();
-                                                    return;
+
+                                                var buttons = document.querySelectorAll('button, input[type=submit], a[href*=login], .btn');
+                                                // Try to find a submit button
+                                                for(var btn of buttons) {{
+                                                    var txt = btn.innerText || btn.value || '';
+                                                    txt = txt.toLowerCase();
+                                                    if(txt.includes('login') || txt.includes('connect') || txt.includes('登录') || txt.includes('log in')) {{
+                                                        btn.style.border = '2px solid green'; // Visual Feedback
+                                                        btn.click();
+                                                        return;
+                                                    }}
                                                 }}
-                                            }}
-                                            // Fallback: click the first button found in form
-                                            if(buttons.length > 0) buttons[0].click();
-                                        }}, 500);
+                                                // Fallback: click the first button found in form if any
+                                                if(buttons.length > 0) {{
+                                                    buttons[0].style.border = '2px solid green';
+                                                    buttons[0].click();
+                                                }}
+                                            }}, 1000);
+                                        }} catch (e) {{
+                                            console.error('WifiAutoLogin: Script Error', e);
+                                            alert('AutoLogin Script Error: ' + e.message);
+                                        }}
                                     }})();
                                 ";
 

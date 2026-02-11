@@ -180,3 +180,11 @@ FUNCTION Heartbeat_Timer_Tick():
 * **GUI 框架**：WPF 或 Windows Forms (构建配置界面和托盘)
 * **浏览器内核**：Microsoft Edge WebView2 (系统自带，无需打包大体积浏览器)
 * **网络库**：`System.Net.NetworkInformation` (状态监听), `System.Net.Http` (心跳检测)
+
+## 7. 测试功能 (Testing)
+
+为了方便验证登录逻辑，软件内置了测试功能：
+- **测试入口**：在主界面点击“Test Login”按钮。
+- **本地测试页**：当“Login URL”为空或填写为“test”时，程序会自动扫描项目目录下的 `test-page` 文件夹，加载找到的第一个 `.html` 或 `.htm` 文件作为模拟登录页面。
+- **作用**：允许开发者和用户在不连接实际 Wi-Fi 的情况下，通过保存下来的认证页面副本验证自动填充和点击逻辑是否正确。
+- **忽略文件**：`test-page/` 目录已被加入 `.gitignore`，避免测试用的网页文件污染代码仓库。

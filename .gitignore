@@ -60,3 +60,6 @@ Desktop.ini
 
 # User config data (local only)
 config.json
+
+# Test pages
+test-page/

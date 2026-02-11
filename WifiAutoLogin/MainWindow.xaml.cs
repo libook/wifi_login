@@ -112,6 +112,68 @@ namespace WifiAutoLogin
             System.Windows.MessageBox.Show("Configuration Saved!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
+        private async void BtnTest_Click(object sender, RoutedEventArgs e)
+        {
+            var config = new NetworkConfig
+            {
+                Ssid = TxtSsid.Text.Trim(),
+                Username = TxtUsername.Text.Trim(),
+                EncryptedPassword = _configService.EncryptPassword(TxtPassword.Password),
+                LoginUrl = TxtLoginUrl.Text.Trim(),
+                UsernameSelector = TxtUsernameSelector.Text.Trim(),
+                PasswordSelector = TxtPasswordSelector.Text.Trim(),
+                LoginButtonSelector = TxtLoginButtonSelector.Text.Trim()
+            };
+
+            // Auto-detect test page if URL is empty or "test"
+            if (string.IsNullOrEmpty(config.LoginUrl) || config.LoginUrl.ToLower() == "test")
+            {
+                string testPageDir = @"c:\Users\liboo\Documents\Lab\wifi_login\test-page";
+                if (System.IO.Directory.Exists(testPageDir))
+                {
+                    var files = System.IO.Directory.GetFiles(testPageDir, "*.*")
+                        .Where(s => s.EndsWith(".htm", StringComparison.OrdinalIgnoreCase) || s.EndsWith(".html", StringComparison.OrdinalIgnoreCase))
+                        .ToArray();
+
+                    if (files.Length > 0)
+                    {
+                        config.LoginUrl = files[0];
+                    }
+                    else
+                    {
+                        System.Windows.MessageBox.Show($"No .htm or .html files found in: {testPageDir}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return;
+                    }
+                }
+                else
+                {
+                    System.Windows.MessageBox.Show($"Test page directory not found at: {testPageDir}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+            }
+
+            BtnTest.IsEnabled = false;
+            try
+            {
+                var loginService = new LoginService();
+                bool success = await loginService.PerformLoginAsync(config, config.LoginUrl);
+
+                if (success)
+                {
+                    System.Windows.MessageBox.Show("Login Test Successful!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    System.Windows.MessageBox.Show("Login Test Failed.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            finally
+            {
+                BtnTest.IsEnabled = true;
+            }
+        }
+
+
         private void BtnRemove_Click(object sender, RoutedEventArgs e)
         {
             if (NetworksList.SelectedItem is NetworkConfig config)
