@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
@@ -17,6 +18,7 @@ namespace WifiAutoLogin
         private readonly ConnectivityChecker _connectivityChecker = new ConnectivityChecker();
         private readonly LoginService _loginService = new LoginService();
         private DispatcherTimer? _heartbeatTimer;
+        private readonly SemaphoreSlim _networkLock = new SemaphoreSlim(1, 1);
 
         protected override void OnStartup(StartupEventArgs e)
         {
@@ -53,62 +55,70 @@ namespace WifiAutoLogin
 
         private async void OnWifiConnected(string ssid)
         {
-            _trayIcon?.SetStatus(true, $"Connected to {ssid}");
-
-            var config = _configService.CurrentConfig.Networks.FirstOrDefault(n => n.Ssid == ssid);
-            if (config == null) return; // Not a managed network
-
-            _trayIcon?.ShowMessage("Network Detected", $"Checking connection for {ssid}...", System.Windows.Forms.ToolTipIcon.Info);
-
-            bool isOnline = await _connectivityChecker.IsConnectedToInternetAsync();
-            var connectivityLevel = _connectivityChecker.IsSystemPossiblyUnderCaptivePortal();
-            LoggerService.Log($"Network detected: {ssid}. Online Status: {isOnline}, System Status: {connectivityLevel}");
-
-            if (isOnline && connectivityLevel != global::Windows.Networking.Connectivity.NetworkConnectivityLevel.ConstrainedInternetAccess)
+            await _networkLock.WaitAsync();
+            try
             {
-                 _trayIcon?.ShowMessage("Online", $"{ssid} is already online.", System.Windows.Forms.ToolTipIcon.Info);
-                 LoggerService.Log($"{ssid} is already online. Starting Heartbeat.");
-                 StartHeartbeat();
-                 return;
+                _trayIcon?.SetStatus(true, $"Connected to {ssid}");
+
+                var config = _configService.CurrentConfig.Networks.FirstOrDefault(n => n.Ssid == ssid);
+                if (config == null) return; // Not a managed network
+
+                _trayIcon?.ShowMessage("Network Detected", $"Checking connection for {ssid}...", System.Windows.Forms.ToolTipIcon.Info);
+
+                bool isOnline = await _connectivityChecker.IsConnectedToInternetAsync();
+                var connectivityLevel = _connectivityChecker.IsSystemPossiblyUnderCaptivePortal();
+                LoggerService.Log($"Network detected: {ssid}. Online Status: {isOnline}, System Status: {connectivityLevel}");
+
+                if (isOnline && connectivityLevel != global::Windows.Networking.Connectivity.NetworkConnectivityLevel.ConstrainedInternetAccess)
+                {
+                    _trayIcon?.ShowMessage("Online", $"{ssid} is already online.", System.Windows.Forms.ToolTipIcon.Info);
+                    LoggerService.Log($"{ssid} is already online. Starting Heartbeat.");
+                    StartHeartbeat();
+                    return;
+                }
+
+                // Not online or Captive Portal detected, try login
+                _trayIcon?.ShowMessage("Auto Login", $"Attempting to login to {ssid}...", System.Windows.Forms.ToolTipIcon.Info);
+                LoggerService.Log($"Attempting login for {ssid}...");
+
+                // Detect URL if needed
+                string targetUrl = config.LoginUrl;
+                if (string.IsNullOrEmpty(targetUrl))
+                {
+                    targetUrl = await _connectivityChecker.DetectPortalUrlAsync();
+                }
+
+                if (string.IsNullOrEmpty(targetUrl))
+                {
+                    _trayIcon?.ShowMessage("Error", "Could not detect login URL.", System.Windows.Forms.ToolTipIcon.Error);
+                    return;
+                }
+
+                bool result = await _loginService.PerformLoginAsync(config, targetUrl);
+                LoggerService.Log($"Login attempt finished. Result: {result}");
+
+                if (result)
+                {
+                    // Double check
+                    if (await _connectivityChecker.IsConnectedToInternetAsync())
+                    {
+                        _trayIcon?.ShowMessage("Success", $"Successfully logged in to {ssid}!", System.Windows.Forms.ToolTipIcon.Info);
+                        StartHeartbeat();
+                    }
+                    else
+                    {
+                        _trayIcon?.ShowMessage("Failed", "Login appeared successful but still offline.", System.Windows.Forms.ToolTipIcon.Warning);
+                    }
+                }
+                else
+                {
+                    _trayIcon?.ShowMessage("Failed", "Auto login failed.", System.Windows.Forms.ToolTipIcon.Error);
+                    LoggerService.Log("Auto login failed.");
+                }
             }
-
-            // Not online or Captive Portal detected, try login
-             _trayIcon?.ShowMessage("Auto Login", $"Attempting to login to {ssid}...", System.Windows.Forms.ToolTipIcon.Info);
-             LoggerService.Log($"Attempting login for {ssid}...");
-            
-            // Detect URL if needed
-            string targetUrl = config.LoginUrl;
-            if (string.IsNullOrEmpty(targetUrl))
+            finally
             {
-                targetUrl = await _connectivityChecker.DetectPortalUrlAsync();
-            }
-
-            if (string.IsNullOrEmpty(targetUrl))
-            {
-                 _trayIcon?.ShowMessage("Error", "Could not detect login URL.", System.Windows.Forms.ToolTipIcon.Error);
-                 return;
-            }
-
-            bool result = await _loginService.PerformLoginAsync(config, targetUrl);
-            LoggerService.Log($"Login attempt finished. Result: {result}");
-            
-            if (result)
-            {
-                 // Double check
-                 if (await _connectivityChecker.IsConnectedToInternetAsync())
-                 {
-                     _trayIcon?.ShowMessage("Success", $"Successfully logged in to {ssid}!", System.Windows.Forms.ToolTipIcon.Info);
-                     StartHeartbeat();
-                 }
-                 else
-                 {
-                     _trayIcon?.ShowMessage("Failed", "Login appeared successful but still offline.", System.Windows.Forms.ToolTipIcon.Warning);
-                 }
-            }
-            else
-            {
-                _trayIcon?.ShowMessage("Failed", "Auto login failed.", System.Windows.Forms.ToolTipIcon.Error);
-                LoggerService.Log("Auto login failed.");
+                _networkLock.Release();
             }
         }
 
