@@ -35,7 +35,7 @@ namespace WifiAutoLogin.Services
 
         public void ShowMessage(string title, string message, ToolTipIcon icon = ToolTipIcon.Info)
         {
-            _notifyIcon.ShowBalloonTip(3000, title, message, icon);
+            _notifyIcon.ShowBalloonTip(1000, title, message, icon);
         }
 
         public void SetStatus(bool isConnected, string text)
