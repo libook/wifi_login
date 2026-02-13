@@ -30,14 +30,17 @@ namespace WifiAutoLogin.Services
                 {
                     string json = File.ReadAllText(_configPath);
                     CurrentConfig = JsonSerializer.Deserialize<AppConfig>(json) ?? new AppConfig();
+                    LoggerService.Log($"Configuration loaded from {_configPath}. {CurrentConfig.Networks.Count} networks configured.");
                 }
-                catch
+                catch (Exception ex)
                 {
+                    LoggerService.LogError("Failed to load configuration", ex);
                     CurrentConfig = new AppConfig();
                 }
             }
             else
             {
+                LoggerService.Log("Configuration file not found. Creating default config.");
                 CurrentConfig = new AppConfig();
                 SaveConfig();
             }

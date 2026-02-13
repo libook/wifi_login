@@ -11,7 +11,13 @@ namespace WifiAutoLogin
         public HiddenBrowserWindow()
         {
             InitializeComponent();
+            this.Closed += HiddenBrowserWindow_Closed;
             _ = InitializeWebViewAsync();
+        }
+
+        private void HiddenBrowserWindow_Closed(object? sender, EventArgs e)
+        {
+            webView.Dispose();
         }
 
         public void SetDebugMode(bool debug)

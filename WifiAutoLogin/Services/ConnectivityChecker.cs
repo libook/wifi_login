@@ -1,6 +1,6 @@
 using System;
 using System.Net.Http;
-using System.Net.NetworkInformation;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.Networking.Connectivity;
 
@@ -8,31 +8,64 @@ namespace WifiAutoLogin.Services
 {
     public class ConnectivityChecker
     {
-        private static readonly HttpClient _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
-
-        public async Task<bool> IsConnectedToInternetAsync()
+        public async Task<bool> IsConnectedToInternetAsync(CancellationToken cancellationToken = default)
         {
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 // Trusted System Check
                 var connectivityLevel = IsSystemPossiblyUnderCaptivePortal();
-                // If system explicitly says "Constrained", we are in captive portal -> Not fully connected
-                if (connectivityLevel == NetworkConnectivityLevel.ConstrainedInternetAccess) return false;
+                LoggerService.Log($"System connectivity level check: {connectivityLevel}");
                 
-                // If system says "InternetAccess", we trust it generally, but Double Check with Ping
+                if (connectivityLevel == NetworkConnectivityLevel.ConstrainedInternetAccess) 
+                {
+                    LoggerService.Log("System reported ConstrainedInternetAccess (Captive Portal detected). Proceeding to verify.");
+                }
+                
                 if (connectivityLevel == NetworkConnectivityLevel.InternetAccess)
                 {
-                     // Optional: Double check because sometimes OS is slow to update
+                    LoggerService.Log("System reported InternetAccess. Proceeding with verification.");
                 }
 
-                // Try Ping First
-                using var ping = new Ping();
-                var reply = await ping.SendPingAsync("8.8.8.8", 2000);
-                if (reply.Status == IPStatus.Success) return true;
+                cancellationToken.ThrowIfCancellationRequested();
+
+                LoggerService.Log("Attempting connectivity check via http://connectivitycheck.platform.hicloud.com/generate_204...");
                 
-                // Fallback to HTTP Head
-                var response = await _httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Head, "http://www.baidu.com"));
-                return response.IsSuccessStatusCode;
+                // Use a handler that DOES NOT automatically follow redirects to detect 3xx status
+                using var handler = new HttpClientHandler { AllowAutoRedirect = false };
+                using var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(5) };
+
+                try 
+                {
+                    var response = await client.GetAsync("http://connectivitycheck.platform.hicloud.com/generate_204", cancellationToken);
+                    LoggerService.Log($"Connectivity check response: {response.StatusCode}");
+
+                    if (response.StatusCode == System.Net.HttpStatusCode.NoContent) // 204
+                    {
+                        LoggerService.Log("Received 204 NoContent. Internet is connected.");
+                        return true;
+                    }
+                    else if ((int)response.StatusCode >= 300 && (int)response.StatusCode < 400)
+                    {
+                        LoggerService.Log($"Received redirect status ({response.StatusCode}). Likely captive portal.");
+                        return false;
+                    }
+                    else
+                    {
+                        LoggerService.Log($"Received unexpected status ({response.StatusCode}). Assuming no internet or captive portal.");
+                        return false;
+                    }
+                }
+                catch (HttpRequestException ex)
+                {
+                     LoggerService.Log($"HTTP request failed: {ex.Message}. Assuming no connectivity.");
+                     return false;
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -57,25 +90,36 @@ namespace WifiAutoLogin.Services
             }
         }
 
-        public async Task<string> DetectPortalUrlAsync()
+        public async Task<string> DetectPortalUrlAsync(CancellationToken cancellationToken = default)
         {
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 // We use a handler that DOES NOT automatically follow redirects to capture the 302 location
                 using var handler = new HttpClientHandler { AllowAutoRedirect = false };
                 using var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(5) };
                 
                 // Microsoft's connect test URL is standard for this
-                var response = await client.GetAsync("http://www.msftconnecttest.com/connecttest.txt");
+                LoggerService.Log("Attempting to detect portal URL via msftconnecttest.com...");
+                var response = await client.GetAsync("http://www.msftconnecttest.com/connecttest.txt", cancellationToken);
+                LoggerService.Log($"Portal detection response: {response.StatusCode}");
                 
                 if (response.StatusCode == System.Net.HttpStatusCode.Redirect || 
                     response.StatusCode == System.Net.HttpStatusCode.Moved ||
                     response.StatusCode == System.Net.HttpStatusCode.Found)
                 {
-                    return response.Headers.Location?.ToString() ?? string.Empty;
+                    var location = response.Headers.Location?.ToString() ?? string.Empty;
+                    LoggerService.Log($"Detected redirect to location: {location}");
+                    return location;
                 }
                 
+                LoggerService.Log("No redirect detected during portal URL check.");
                 return string.Empty; // No redirect, might be online or blocked differently
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch
             {

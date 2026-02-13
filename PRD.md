@@ -50,7 +50,7 @@
 
 * **阶段一：轻量级探测 (Low Power)**
 * **原理**：不启动浏览器内核，仅通过 Socket 发送 ICMP (Ping) 或 HTTP Head 请求。
-* **目标**：公共稳定地址（如 `8.8.8.8` 或 `www.baidu.com`）。
+* **目标**：公共稳定地址（如 `http://connectivitycheck.platform.hicloud.com/generate_204`）。
 * **频率**：
 * 刚连接 Wifi 时：立即检测。
 * 已登录状态：每隔 60 秒（可配置）检测一次。
