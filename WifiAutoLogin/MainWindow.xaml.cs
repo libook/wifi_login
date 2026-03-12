@@ -191,9 +191,10 @@ namespace WifiAutoLogin
         private void ChkAutoStart_Changed(object sender, RoutedEventArgs e)
         {
             if (_configService == null) return;
-            _configService.CurrentConfig.AutoStart = ChkAutoStart.IsChecked ?? false;
+            bool isEnabled = ChkAutoStart.IsChecked ?? false;
+            _configService.CurrentConfig.AutoStart = isEnabled;
             _configService.SaveConfig();
-            // TODO: Implement registry key toggle for actual auto-start
+            StartupService.SetAutoStart(isEnabled);
         }
 
         private void ChkEnableLogging_Changed(object sender, RoutedEventArgs e)
