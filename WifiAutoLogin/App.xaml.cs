@@ -17,7 +17,7 @@ namespace WifiAutoLogin
         private readonly ConfigService _configService = new ConfigService();
         private readonly ConnectivityChecker _connectivityChecker = new ConnectivityChecker();
         private readonly LoginService _loginService = new LoginService();
-        private DispatcherTimer? _heartbeatTimer;
+
         
         // Concurrency control
         private readonly SemaphoreSlim _connectionLock = new SemaphoreSlim(1, 1);
@@ -40,10 +40,7 @@ namespace WifiAutoLogin
             _networkMonitor.OnWifiConnected += OnWifiConnected;
             _networkMonitor.OnDisconnected += OnDisconnected;
 
-            // Heartbeat Timer
-            _heartbeatTimer = new DispatcherTimer();
-            _heartbeatTimer.Interval = TimeSpan.FromSeconds(_configService.CurrentConfig.HeartbeatInterval);
-            _heartbeatTimer.Tick += HeartbeatTimer_Tick;
+
 
             // Initial Check (if already connected)
             Task.Run(() => 
@@ -139,8 +136,7 @@ namespace WifiAutoLogin
 
                     await Dispatcher.InvokeAsync(() => 
                         _trayIcon?.ShowMessage("Online", $"{ssid} is already online.", System.Windows.Forms.ToolTipIcon.Info));
-                    LoggerService.Log($"{ssid} is already online. Starting Heartbeat.");
-                    StartHeartbeat();
+
                     return;
                 }
 
@@ -186,7 +182,7 @@ namespace WifiAutoLogin
                         LoggerService.Log("Internet connection verified. Login successful.");
                         await Dispatcher.InvokeAsync(() => 
                             _trayIcon?.ShowMessage("Success", $"Successfully logged in to {ssid}!", System.Windows.Forms.ToolTipIcon.Info));
-                        StartHeartbeat();
+
                     }
                     else
                     {
@@ -230,7 +226,7 @@ namespace WifiAutoLogin
                 await Dispatcher.InvokeAsync(() => 
                     _trayIcon?.SetStatus(false, "Disconnected"));
                 LoggerService.Log("Network Disconnected");
-                StopHeartbeat();
+
             }
             catch (Exception ex)
             {
@@ -242,45 +238,7 @@ namespace WifiAutoLogin
             }
         }
 
-        private void StartHeartbeat()
-        {
-            // Ensure thread safety for timer
-            Dispatcher.Invoke(() => 
-            {
-                if (!_heartbeatTimer!.IsEnabled)
-                    _heartbeatTimer.Start();
-            });
-        }
 
-        private void StopHeartbeat()
-        {
-            Dispatcher.Invoke(() => 
-            {
-                _heartbeatTimer?.Stop();
-            });
-        }
-
-        private async void HeartbeatTimer_Tick(object? sender, EventArgs e)
-        {
-             // Check connectivity
-             LoggerService.Log("Heartbeat: Checking internet connectivity...");
-             bool isOnline = await _connectivityChecker.IsConnectedToInternetAsync(); // No token, brief check
-             if (!isOnline)
-             {
-                 LoggerService.Log("Heartbeat: Internet connection lost.");
-                 // Lost connection, retry login?
-                 var ssid = _networkMonitor?.GetConnectedSsid();
-                 if (!string.IsNullOrEmpty(ssid))
-                 {
-                     LoggerService.Log($"Heartbeat: Re-triggering login for {ssid}...");
-                     OnWifiConnected(ssid); // Re-trigger logic -> this will acquire lock and restart flow
-                 }
-             }
-             else
-             {
-                 LoggerService.Log("Heartbeat: Connection is still stable.");
-             }
-        }
 
         private void OpenSettings()
         {
