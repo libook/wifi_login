@@ -14,7 +14,15 @@ namespace WifiAutoLogin
         {
             InitializeComponent();
             _configService = new ConfigService();
+            InitializeNotificationLevelComboBox();
             LoadData();
+        }
+
+        private void InitializeNotificationLevelComboBox()
+        {
+            CmbNotificationLevel.Items.Add("Default");
+            CmbNotificationLevel.Items.Add("Maximum");
+            CmbNotificationLevel.Items.Add("Silent");
         }
 
         private void LoadData()
@@ -25,6 +33,7 @@ namespace WifiAutoLogin
             ChkAutoStart.IsChecked = _configService.CurrentConfig.AutoStart;
             ChkEnableLogging.IsChecked = _configService.CurrentConfig.EnableLogging;
             ChkShowBrowser.IsChecked = _configService.CurrentConfig.ShowBrowser;
+            CmbNotificationLevel.SelectedIndex = (int)_configService.CurrentConfig.NotificationLevel;
         }
 
         private void NetworksList_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -210,6 +219,13 @@ namespace WifiAutoLogin
         {
             if (_configService == null) return;
             _configService.CurrentConfig.ShowBrowser = ChkShowBrowser.IsChecked ?? false;
+            _configService.SaveConfig();
+        }
+
+        private void CmbNotificationLevel_Changed(object sender, SelectionChangedEventArgs e)
+        {
+            if (_configService == null || CmbNotificationLevel.SelectedIndex < 0) return;
+            _configService.CurrentConfig.NotificationLevel = (NotificationLevel)CmbNotificationLevel.SelectedIndex;
             _configService.SaveConfig();
         }
     }

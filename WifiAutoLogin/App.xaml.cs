@@ -118,8 +118,14 @@ namespace WifiAutoLogin
                 var config = _configService.CurrentConfig.Networks.FirstOrDefault(n => n.Ssid == ssid);
                 if (config == null) return; // Not a managed network
 
-                await Dispatcher.InvokeAsync(() => 
-                    _trayIcon?.ShowMessage("Network Detected", $"Checking connection for {ssid}...", System.Windows.Forms.ToolTipIcon.Info));
+                var notificationLevel = _configService.CurrentConfig.NotificationLevel;
+                
+                // Network Detected notification - disabled in Default and Silent modes
+                if (notificationLevel == NotificationLevel.Maximum)
+                {
+                    await Dispatcher.InvokeAsync(() => 
+                        _trayIcon?.ShowMessage("Network Detected", $"Checking connection for {ssid}...", System.Windows.Forms.ToolTipIcon.Info));
+                }
 
                 bool isOnline = await _connectivityChecker.IsConnectedToInternetAsync(token);
                 var connectivityLevel = _connectivityChecker.IsSystemPossiblyUnderCaptivePortal();
@@ -134,15 +140,23 @@ namespace WifiAutoLogin
                         LoggerService.Log("Network appears Constrained by OS, but active check confirmed Online. Trusting active check.");
                     }
 
-                    await Dispatcher.InvokeAsync(() => 
-                        _trayIcon?.ShowMessage("Online", $"{ssid} is already online.", System.Windows.Forms.ToolTipIcon.Info));
+                    // Online notification - disabled in Default and Silent modes
+                    if (notificationLevel == NotificationLevel.Maximum)
+                    {
+                        await Dispatcher.InvokeAsync(() => 
+                            _trayIcon?.ShowMessage("Online", $"{ssid} is already online.", System.Windows.Forms.ToolTipIcon.Info));
+                    }
 
                     return;
                 }
 
                 // Not online or Captive Portal detected, try login
-                await Dispatcher.InvokeAsync(() => 
-                    _trayIcon?.ShowMessage("Auto Login", $"Attempting to login to {ssid}...", System.Windows.Forms.ToolTipIcon.Info));
+                // Auto Login notification - disabled in Default and Silent modes
+                if (notificationLevel == NotificationLevel.Maximum)
+                {
+                    await Dispatcher.InvokeAsync(() => 
+                        _trayIcon?.ShowMessage("Auto Login", $"Attempting to login to {ssid}...", System.Windows.Forms.ToolTipIcon.Info));
+                }
                 LoggerService.Log($"Attempting login for {ssid}...");
 
                 // Detect URL if needed
@@ -162,8 +176,12 @@ namespace WifiAutoLogin
                     if (!token.IsCancellationRequested)
                     {
                         LoggerService.Log("Failed to detect portal URL, and no URL provided in config.");
-                        await Dispatcher.InvokeAsync(() => 
-                            _trayIcon?.ShowMessage("Error", "Could not detect login URL.", System.Windows.Forms.ToolTipIcon.Error));
+                        // Error notification - disabled only in Silent mode
+                        if (notificationLevel != NotificationLevel.Silent)
+                        {
+                            await Dispatcher.InvokeAsync(() => 
+                                _trayIcon?.ShowMessage("Error", "Could not detect login URL.", System.Windows.Forms.ToolTipIcon.Error));
+                        }
                     }
                     return;
                 }
@@ -180,15 +198,23 @@ namespace WifiAutoLogin
                     if (await _connectivityChecker.IsConnectedToInternetAsync(token))
                     {
                         LoggerService.Log("Internet connection verified. Login successful.");
-                        await Dispatcher.InvokeAsync(() => 
-                            _trayIcon?.ShowMessage("Success", $"Successfully logged in to {ssid}!", System.Windows.Forms.ToolTipIcon.Info));
+                        // Success notification - disabled only in Silent mode
+                        if (notificationLevel != NotificationLevel.Silent)
+                        {
+                            await Dispatcher.InvokeAsync(() => 
+                                _trayIcon?.ShowMessage("Success", $"Successfully logged in to {ssid}!", System.Windows.Forms.ToolTipIcon.Info));
+                        }
 
                     }
                     else
                     {
                         LoggerService.Log("Internet connection check failed after login.");
-                        await Dispatcher.InvokeAsync(() => 
-                            _trayIcon?.ShowMessage("Failed", "Login appeared successful but still offline.", System.Windows.Forms.ToolTipIcon.Warning));
+                        // Failed (warning) notification - disabled only in Silent mode
+                        if (notificationLevel != NotificationLevel.Silent)
+                        {
+                            await Dispatcher.InvokeAsync(() => 
+                                _trayIcon?.ShowMessage("Failed", "Login appeared successful but still offline.", System.Windows.Forms.ToolTipIcon.Warning));
+                        }
                     }
                 }
                 else
@@ -196,8 +222,12 @@ namespace WifiAutoLogin
                     if (!token.IsCancellationRequested)
                     {
                         LoggerService.Log("Login service reported failure.");
-                        await Dispatcher.InvokeAsync(() => 
-                             _trayIcon?.ShowMessage("Failed", "Auto login failed.", System.Windows.Forms.ToolTipIcon.Error));
+                        // Failed (error) notification - disabled only in Silent mode
+                        if (notificationLevel != NotificationLevel.Silent)
+                        {
+                            await Dispatcher.InvokeAsync(() => 
+                                 _trayIcon?.ShowMessage("Failed", "Auto login failed.", System.Windows.Forms.ToolTipIcon.Error));
+                        }
                     }
                 }
             }
