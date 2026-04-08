@@ -2,6 +2,7 @@
 using System.Windows.Controls;
 using WifiAutoLogin.Models;
 using WifiAutoLogin.Services;
+using System.Globalization;
 
 namespace WifiAutoLogin
 {
@@ -14,15 +15,32 @@ namespace WifiAutoLogin
         {
             InitializeComponent();
             _configService = new ConfigService();
+            InitializeLanguageComboBox();
             InitializeNotificationLevelComboBox();
             LoadData();
         }
 
+        private void InitializeLanguageComboBox()
+        {
+            CmbLanguage.Items.Add("English");
+            CmbLanguage.Items.Add("中文");
+            
+            // Temporarily detach event handler
+            CmbLanguage.SelectionChanged -= CmbLanguage_Changed;
+            
+            // Set current language
+            var currentCulture = CultureInfo.CurrentUICulture.Name;
+            CmbLanguage.SelectedIndex = currentCulture.StartsWith("zh") ? 1 : 0;
+            
+            // Re-attach event handler
+            CmbLanguage.SelectionChanged += CmbLanguage_Changed;
+        }
+
         private void InitializeNotificationLevelComboBox()
         {
-            CmbNotificationLevel.Items.Add("Default");
-            CmbNotificationLevel.Items.Add("Maximum");
-            CmbNotificationLevel.Items.Add("Silent");
+            CmbNotificationLevel.Items.Add(LocalizationManager.Instance["NotificationLevelDefault"]);
+            CmbNotificationLevel.Items.Add(LocalizationManager.Instance["NotificationLevelMaximum"]);
+            CmbNotificationLevel.Items.Add(LocalizationManager.Instance["NotificationLevelSilent"]);
         }
 
         private void LoadData()
@@ -82,7 +100,7 @@ namespace WifiAutoLogin
             string ssid = TxtSsid.Text.Trim();
             if (string.IsNullOrEmpty(ssid))
             {
-                System.Windows.MessageBox.Show("SSID is required.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show(LocalizationManager.Instance["SsidRequiredError"], LocalizationManager.Instance["ErrorTitle"], MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
@@ -118,7 +136,7 @@ namespace WifiAutoLogin
             LoadData();
             // Reselect
             NetworksList.SelectedItem = _selectedConfig;
-            System.Windows.MessageBox.Show("Configuration Saved!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            System.Windows.MessageBox.Show(LocalizationManager.Instance["ConfigSavedSuccess"], LocalizationManager.Instance["SuccessTitle"], MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private async void BtnTest_Click(object sender, RoutedEventArgs e)
@@ -169,11 +187,11 @@ namespace WifiAutoLogin
 
                 if (success)
                 {
-                    System.Windows.MessageBox.Show("Login Test Successful!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    System.Windows.MessageBox.Show(LocalizationManager.Instance["LoginTestSuccess"], LocalizationManager.Instance["SuccessTitle"], MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else
                 {
-                    System.Windows.MessageBox.Show("Login Test Failed.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    System.Windows.MessageBox.Show(LocalizationManager.Instance["LoginTestFailed"], LocalizationManager.Instance["ErrorTitle"], MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             finally
@@ -187,7 +205,8 @@ namespace WifiAutoLogin
         {
             if (NetworksList.SelectedItem is NetworkConfig config)
             {
-                if (System.Windows.MessageBox.Show($"Remove {config.Ssid}?", "Confirm", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+                var message = string.Format(LocalizationManager.Instance["RemoveConfirm"], config.Ssid);
+                if (System.Windows.MessageBox.Show(message, LocalizationManager.Instance["ConfirmTitle"], MessageBoxButton.YesNo) == MessageBoxResult.Yes)
                 {
                     _configService.CurrentConfig.Networks.Remove(config);
                     _configService.SaveConfig();
@@ -227,6 +246,21 @@ namespace WifiAutoLogin
             if (_configService == null || CmbNotificationLevel.SelectedIndex < 0) return;
             _configService.CurrentConfig.NotificationLevel = (NotificationLevel)CmbNotificationLevel.SelectedIndex;
             _configService.SaveConfig();
+        }
+
+        private void CmbLanguage_Changed(object sender, SelectionChangedEventArgs e)
+        {
+            if (CmbLanguage.SelectedIndex < 0) return;
+            
+            string cultureName = CmbLanguage.SelectedIndex == 0 ? "en-US" : "zh-CN";
+            LocalizationManager.ChangeLanguage(cultureName);
+            
+            // Update notification level combo box items
+            CmbNotificationLevel.Items.Clear();
+            CmbNotificationLevel.Items.Add(LocalizationManager.Instance["NotificationLevelDefault"]);
+            CmbNotificationLevel.Items.Add(LocalizationManager.Instance["NotificationLevelMaximum"]);
+            CmbNotificationLevel.Items.Add(LocalizationManager.Instance["NotificationLevelSilent"]);
+            CmbNotificationLevel.SelectedIndex = (int)_configService.CurrentConfig.NotificationLevel;
         }
     }
 }

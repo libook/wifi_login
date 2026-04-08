@@ -4,8 +4,9 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WifiAutoLogin"
+        xmlns:services="clr-namespace:WifiAutoLogin.Services"
         mc:Ignorable="d"
-        Title="Wi-Fi Auto Login Assistant" Height="600" Width="600" MinHeight="500"
+        Title="{Binding [WindowTitle], Source={x:Static services:LocalizationManager.Instance}}" Height="600" Width="600" MinHeight="500"
         WindowStartupLocation="CenterScreen"
         Icon="WifiAutoLogin.ico">
     <Grid Margin="10">
@@ -20,7 +21,7 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <TextBlock Grid.Column="0" Grid.ColumnSpan="2" Text="Network Configuration" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
+        <TextBlock Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding [HeaderTitle], Source={x:Static services:LocalizationManager.Instance}}" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
 
         <!-- Network List -->
         <ListBox x:Name="NetworksList" Grid.Row="1" Grid.Column="0" Margin="0,0,10,0" SelectionChanged="NetworksList_SelectionChanged">
@@ -34,30 +35,30 @@
         <!-- Edit Form -->
         <ScrollViewer Grid.Row="1" Grid.Column="1" VerticalScrollBarVisibility="Auto">
             <StackPanel Margin="0,0,10,0">
-                <TextBlock Text="SSID:"/>
+                <TextBlock Text="{Binding [SsidLabel], Source={x:Static services:LocalizationManager.Instance}}"/>
                 <TextBox x:Name="TxtSsid" Margin="0,5,0,10" />
 
-                <TextBlock Text="Username:"/>
+                <TextBlock Text="{Binding [UsernameLabel], Source={x:Static services:LocalizationManager.Instance}}"/>
                 <TextBox x:Name="TxtUsername" Margin="0,5,0,10" />
 
-                <TextBlock Text="Password:"/>
+                <TextBlock Text="{Binding [PasswordLabel], Source={x:Static services:LocalizationManager.Instance}}"/>
                 <PasswordBox x:Name="TxtPassword" Margin="0,5,0,10" />
 
-                <TextBlock Text="Login URL (Optional):"/>
+                <TextBlock Text="{Binding [LoginUrlLabel], Source={x:Static services:LocalizationManager.Instance}}"/>
                 <TextBox x:Name="TxtLoginUrl" Margin="0,5,0,10" />
 
-                <TextBlock Text="Username CSS Selector (Optional):"/>
+                <TextBlock Text="{Binding [UsernameSelectorLabel], Source={x:Static services:LocalizationManager.Instance}}"/>
                 <TextBox x:Name="TxtUsernameSelector" Margin="0,5,0,10" />
 
-                <TextBlock Text="Password CSS Selector (Optional):"/>
+                <TextBlock Text="{Binding [PasswordSelectorLabel], Source={x:Static services:LocalizationManager.Instance}}"/>
                 <TextBox x:Name="TxtPasswordSelector" Margin="0,5,0,10" />
 
-                <TextBlock Text="Login Button CSS Selector (Optional):"/>
+                <TextBlock Text="{Binding [LoginButtonSelectorLabel], Source={x:Static services:LocalizationManager.Instance}}"/>
                 <TextBox x:Name="TxtLoginButtonSelector" Margin="0,5,0,10" />
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
-                    <Button x:Name="BtnTest" Content="Test Login" Width="100" Height="30" Margin="0,0,10,0" Click="BtnTest_Click"/>
-                    <Button x:Name="BtnSave" Content="Save Config" Width="100" Height="30" Click="BtnSave_Click"/>
+                    <Button x:Name="BtnTest" Content="{Binding [TestLoginButton], Source={x:Static services:LocalizationManager.Instance}}" Width="100" Height="30" Margin="0,0,10,0" Click="BtnTest_Click"/>
+                    <Button x:Name="BtnSave" Content="{Binding [SaveConfigButton], Source={x:Static services:LocalizationManager.Instance}}" Width="100" Height="30" Click="BtnSave_Click"/>
                 </StackPanel>
             </StackPanel>
         </ScrollViewer>
@@ -70,12 +71,16 @@
         
         <WrapPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
             <StackPanel Orientation="Horizontal" Margin="0,0,15,5">
-                <TextBlock Text="Notification Level:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                <TextBlock Text="{Binding [LanguageLabel], Source={x:Static services:LocalizationManager.Instance}}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                <ComboBox x:Name="CmbLanguage" Width="80" VerticalAlignment="Center" SelectionChanged="CmbLanguage_Changed"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,0,15,5">
+                <TextBlock Text="{Binding [NotificationLevelLabel], Source={x:Static services:LocalizationManager.Instance}}" VerticalAlignment="Center" Margin="0,0,5,0"/>
                 <ComboBox x:Name="CmbNotificationLevel" Width="100" VerticalAlignment="Center" SelectionChanged="CmbNotificationLevel_Changed"/>
             </StackPanel>
-            <CheckBox x:Name="ChkShowBrowser" Content="Show Login Window (Debug)" VerticalAlignment="Center" Margin="0,0,15,5" Checked="ChkShowBrowser_Changed" Unchecked="ChkShowBrowser_Changed"/>
-            <CheckBox x:Name="ChkEnableLogging" Content="Enable Log Recording" VerticalAlignment="Center" Margin="0,0,15,5" Checked="ChkEnableLogging_Changed" Unchecked="ChkEnableLogging_Changed"/>
-            <CheckBox x:Name="ChkAutoStart" Content="Run on Startup" VerticalAlignment="Center" Margin="0,0,15,5" Checked="ChkAutoStart_Changed" Unchecked="ChkAutoStart_Changed"/>
+            <CheckBox x:Name="ChkShowBrowser" Content="{Binding [ShowBrowserCheckBox], Source={x:Static services:LocalizationManager.Instance}}" VerticalAlignment="Center" Margin="0,0,15,5" Checked="ChkShowBrowser_Changed" Unchecked="ChkShowBrowser_Changed"/>
+            <CheckBox x:Name="ChkEnableLogging" Content="{Binding [EnableLoggingCheckBox], Source={x:Static services:LocalizationManager.Instance}}" VerticalAlignment="Center" Margin="0,0,15,5" Checked="ChkEnableLogging_Changed" Unchecked="ChkEnableLogging_Changed"/>
+            <CheckBox x:Name="ChkAutoStart" Content="{Binding [AutoStartCheckBox], Source={x:Static services:LocalizationManager.Instance}}" VerticalAlignment="Center" Margin="0,0,15,5" Checked="ChkAutoStart_Changed" Unchecked="ChkAutoStart_Changed"/>
         </WrapPanel>
     </Grid>
 </Window>
