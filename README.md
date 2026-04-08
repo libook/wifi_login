@@ -1,63 +1,236 @@
 # Windows Wi-Fi Auto-Login Assistant
 
-这是一个轻量级的 Windows 11 托盘应用程序，旨在自动识别并完成 Wi-Fi Web 认证（Captive Portal），实现“无感联网”。
+A lightweight Windows 11 tray application designed to automatically identify and complete Wi-Fi Web authentication (Captive Portal), achieving "seamless connectivity".
 
-## 主要功能
+## Main Features
 
-- **后台监控**：自动监听网络连接状态变化。
-- **配置管理**：支持多 SSID 配置，加密存储账号密码。
-- **智能探测**：自动识别是否需要 Web 认证及登录页面 URL。
-- **无感登录**：使用 Edge WebView2 内核后台自动填充并提交登录表单。
-- **心跳维护**：定期检测连通性，掉线自动重连。
+- **Background Monitoring**: Automatically monitors network connection status changes
+- **Configuration Management**: Supports multiple SSID configurations with encrypted storage of account credentials
+- **Intelligent Detection**: Automatically identifies whether Web authentication is required and detects login page URLs
+- **Seamless Login**: Uses Edge WebView2 kernel to automatically fill and submit login forms in the background
+- **Heartbeat Maintenance**: Periodically checks connectivity and automatically reconnects when disconnected
+- **Internationalization Support**: Supports switching between Chinese and English interfaces
+- **Log Recording**: Optional logging functionality for troubleshooting
+- **Auto-start on Boot**: Supports automatic startup on system boot
 
-## 构建指南
+## Build Guide
 
-### 前置条件
+### Prerequisites
 
-1. **.NET 8 SDK**: 确保已安装 [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)。
-2. **WebView2 Runtime**: Windows 11 通常自带。如果未安装，请从 [Microsoft 官网](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) 下载。
+1. **.NET 8 SDK**: Ensure [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) is installed
+2. **WebView2 Runtime**: Usually included with Windows 11. If not installed, download from [Microsoft website](https://developer.microsoft.com/en-us/microsoft-edge/webview2/)
 
-### 构建步骤
+### Build Steps
 
-在项目根目录下运行以下命令：
+Run the following commands in the project root directory:
 
 ```powershell
-# 进入项目目录
-cd WifiAutoLogin
-
-# 还原依赖并构建
+# Restore dependencies and build
 dotnet build
+
+# Or run directly
+dotnet run
 ```
 
-## 使用说明
+## Usage Instructions
 
-1. **运行程序**:
-   构建成功后，在 `WifiAutoLogin` 目录下执行：
-   ```powershell
-   dotnet run
+### 1. Start the Program
+
+After successful build, run the program:
+```powershell
+dotnet run
+```
+
+The program will minimize to the **system tray**, and the tray icon will display the current network connection status.
+
+### 2. Open Settings Interface
+
+- **Method 1**: Double-click the tray icon
+- **Method 2**: Right-click the tray icon and select "Settings"
+
+### 3. Configure Networks
+
+In the settings interface:
+
+1. **Add Network Configuration**:
+   - Click the **"+"** button in the bottom left corner
+   - Fill in the following information:
+     - **SSID**: Wi-Fi network name (required)
+     - **Username**: Login username
+     - **Password**: Login password
+     - **Login URL** (optional): Login page address, leave empty for auto-detection
+     - **Username CSS Selector** (optional): CSS selector for the username input field
+     - **Password CSS Selector** (optional): CSS selector for the password input field
+     - **Login Button CSS Selector** (optional): CSS selector for the login button
+   - Click **"Save Config"** to save the configuration
+
+2. **Edit Configuration**:
+   - Select the network to edit from the left-side network list
+   - Modify the information in the right-side form
+   - Click **"Save Config"** to save
+
+3. **Delete Configuration**:
+   - Select the network to delete from the left-side network list
+   - Click the **"-"** button in the bottom left corner
+   - Confirm deletion
+
+4. **Test Login**:
+   - Select or fill in network configuration information
+   - Click **"Test Login"** to test if login is successful
+
+### Test Login Function
+
+The test login function allows you to test configurations without connecting to an actual Wi-Fi network.
+
+#### Usage Method
+
+1. **Prepare Test Page**:
+   - Create a `test-page` folder in the project root directory
+   - Place HTML files (`.htm` or `.html`) of the login page in this folder
+   - If the login page has related resource files (such as images, CSS, JS), place them together
+
+   Directory structure example:
+   ```
+   wifi_login/
+   ├── WifiAutoLogin/
+   ├── test-page/
+   │   ├── login.html          # Login page
+   │   └── login_files/        # Related resource files (optional)
+   └── README.md
    ```
 
-2. **配置网络**:
-   - 程序启动后将最小化至**系统托盘**。
-   - 右键点击托盘图标，选择 **Settings**（或双击图标）。
-   - 点击 **"+"** 按钮添加新配置。
-   - 输入目标 Wi-Fi 的 **SSID**、**Username** 与 **Password**。
-   - 点击 **Save Config** 保存。
+2. **Execute Test**:
+   - Fill in network configuration information in the settings interface
+   - Leave the **Login URL** field empty or enter `test`
+   - Click the **"Test Login"** button
+   - The program will automatically use the first HTML file in the `test-page` folder for testing
 
-3. **自动登录**:
-   - 当系统连接到已配置的 SSID 时，程序会自动进行连通性检测。
-   - 如果检测到存在 Captive Portal，将通过通知提醒用户正在执行自动登录。
-   - 登录成功或失败均会有系统弹窗报告。
+3. **View Results**:
+   - Test successful: Shows "Login Test Successful" prompt
+   - Test failed: Shows "Login Test Failed" prompt
+   - If **"Show Login Window (Debug)"** is enabled, you can see the browser window during the login process
 
-## 注意事项
+#### Notes
 
-- **安全性**: 密码使用 Windows DPAPI (ProtectedData) 进行加密，仅当前登录用户可解密，不会以明文形式存储在磁盘上。
-- **自动启动**: 可以在设置界面勾选 "Run on Startup"。
+- The test page should be a real login page HTML containing username and password input fields
+- If the test fails, you may need to configure the correct CSS selectors
+- The form action address in the test page may need to be modified to the actual server address
 
-## 技术栈
+### 4. Global Settings
 
-- **C# / .NET 8**
-- **WPF** (界面管理)
-- **WinForms** (托盘图标支持)
-- **WebView2** (无头浏览器执行)
-- **ManagedNativeWifi** (网络状态监控)
+At the bottom of the settings interface, you can configure the following global options:
+
+- **Language**: Switch interface language (English / 中文)
+- **Notification Level**:
+  - **Default**: Only shows important notifications like errors and successes
+  - **Maximum**: Shows all notifications (including network detection, online status, etc.)
+  - **Silent**: Disables all notifications
+- **Show Login Window (Debug)**: Display login window (debug mode)
+- **Enable Log Recording**: Enable logging
+- **Run on Startup**: Auto-start on system boot
+
+### 5. Auto-Login Process
+
+When the system connects to a configured Wi-Fi network:
+
+1. The program automatically detects network connection status
+2. Checks if Web authentication (Captive Portal) is required
+3. If authentication is required:
+   - Automatically detects or uses the configured login URL
+   - Uses WebView2 to load the login page in the background
+   - Automatically fills in username and password
+   - Automatically clicks the login button
+   - Verifies if login is successful
+4. Shows login results through system notifications
+
+## Advanced Configuration
+
+### CSS Selector Configuration
+
+If auto-login fails, you may need to manually configure CSS selectors:
+
+1. Open the login page in a browser
+2. Use browser developer tools (F12) to inspect page elements
+3. Find the username input field, password input field, and login button
+4. Right-click the element, select "Copy" → "Copy selector"
+5. Paste the selector into the corresponding configuration field
+
+Example:
+```
+Username CSS Selector: #username
+Password CSS Selector: #password
+Login Button CSS Selector: button[type="submit"]
+```
+
+### Log Files
+
+When logging is enabled, log files are saved in:
+```
+%APPDATA%\WifiAutoLogin\logs\
+```
+
+Log files are named by date in the format: `log-YYYY-MM-DD.txt`
+
+## Notes
+
+### Security
+
+- Passwords are encrypted using **Windows DPAPI (ProtectedData)**
+- Can only be decrypted by the currently logged-in user
+- Not stored in plain text on disk
+
+### Network Compatibility
+
+- Works with most Wi-Fi networks using Web form authentication
+- Supports automatic detection of common Captive Portal pages
+- For special authentication pages, manual CSS selector configuration may be required
+
+### Performance Optimization
+
+- Uses background WebView2 processes, doesn't affect foreground applications
+- Intelligent detection mechanism avoids unnecessary network requests
+- Supports concurrency control to prevent duplicate login attempts
+
+## Technology Stack
+
+- **C# / .NET 8**: Main development language and runtime
+- **WPF**: User interface framework
+- **WinForms**: System tray icon support
+- **WebView2**: Headless browser engine for executing Web logins
+- **ManagedNativeWifi**: Windows Wi-Fi API wrapper for network status monitoring
+- **DPAPI**: Windows Data Protection API for password encryption
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Program fails to start**
+   - Confirm .NET 8 SDK is installed
+   - Confirm WebView2 Runtime is installed
+
+2. **Cannot detect login page**
+   - Manually configure Login URL
+   - Check if network connection is normal
+
+3. **Auto-login fails**
+   - Use the Test Login function to test
+   - Configure correct CSS selectors
+   - Enable logging to view detailed error information
+
+4. **Cannot login after saving password**
+   - Check if username and password are correct
+   - Some networks may require special character escaping
+
+5. **Test login cannot find test page**
+   - Confirm the `test-page` folder is in the project root directory
+   - Confirm there are `.htm` or `.html` files in the folder
+   - Leave the Login URL field empty or enter `test`
+
+6. **Test login fails but actual network can login**
+   - The form action in the test page may point to the wrong address
+   - Check if the test page has all resources saved completely
+   - Try enabling "Show Login Window (Debug)" to view the detailed process
+
+## License
+
+This project is for personal learning and research use only.
