@@ -233,4 +233,13 @@ Log files are named by date in the format: `log-YYYY-MM-DD.txt`
 
 ## License
 
-This project is for personal learning and research use only.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+MIT License allows you to:
+- ✅ Use the software for any purpose
+- ✅ Modify the software
+- ✅ Distribute the software
+- ✅ Use it privately
+- ✅ Use it commercially
+
+The only requirement is to include the original copyright and license notice in any copy of the software.
