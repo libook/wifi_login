@@ -1,0 +1,61 @@
+name: .NET Desktop Release
+
+# 触发条件：推送 v 开头的标签时执行（如 v1.0.0、v2.1.0）
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      # ====================== 【必填】替换为你的解决方案名称 ======================
+      Solution_Name: WifiAutoLogin.sln  # 例：WpfApp1.sln、WinFormsDemo.sln
+      # ==========================================================================
+      Configuration: Release
+      Project_Path: .           # 项目根目录（默认无需修改）
+
+    steps:
+    - name: 拉取代码
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: 安装 .NET SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: 还原项目依赖
+      run: dotnet restore $env:Solution_Name
+
+    - name: 构建项目
+      run: dotnet build $env:Solution_Name --configuration $env:Configuration --no-restore
+
+    - name: 发布程序（生成独立exe）
+      run: dotnet publish $env:Solution_Name --configuration $env:Configuration --output publish/ --no-build
+
+    - name: 压缩发布文件
+      run: Compress-Archive -Path publish/* -DestinationPath ${{ github.ref_name }}.zip
+
+    - name: 创建 GitHub Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref_name }}
+        release_name: 版本 ${{ github.ref_name }}
+        draft: false
+        prerelease: false
+
+    - name: 上传压缩包到 Release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./${{ github.ref_name }}.zip
+        asset_name: ${{ github.ref_name }}.zip
+        asset_content_type: application/zip
