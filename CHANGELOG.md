@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-05-13
+
+### Fixed
+- 修复修改密码后配置不生效的问题
+
 ## [1.0.0] - 2024-01-01
 
 ### Added
@@ -31,4 +36,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Description |
 |---------|------|-------------|
+| 1.0.1 | 2026-05-13 | 修复修改密码后配置不生效的问题 |
 | 1.0.0 | 2024-01-01 | Initial release with core features |
