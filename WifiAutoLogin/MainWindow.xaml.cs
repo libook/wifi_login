@@ -12,9 +12,14 @@ namespace WifiAutoLogin
         private NetworkConfig? _selectedConfig;
 
         public MainWindow()
+            : this(new ConfigService())
+        {
+        }
+
+        public MainWindow(ConfigService configService)
         {
             InitializeComponent();
-            _configService = new ConfigService();
+            _configService = configService;
             InitializeLanguageComboBox();
             InitializeNotificationLevelComboBox();
             LoadData();

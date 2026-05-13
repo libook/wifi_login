@@ -115,6 +115,7 @@ namespace WifiAutoLogin
                 await Dispatcher.InvokeAsync(() => 
                     _trayIcon?.SetStatus(true, $"Connected to {ssid}"));
 
+                _configService.LoadConfig();
                 var config = _configService.CurrentConfig.Networks.FirstOrDefault(n => n.Ssid == ssid);
                 if (config == null) return; // Not a managed network
 
@@ -274,7 +275,7 @@ namespace WifiAutoLogin
         {
             if (_mainWindow == null || !_mainWindow.IsLoaded)
             {
-                _mainWindow = new MainWindow();
+                _mainWindow = new MainWindow(_configService);
                 _mainWindow.Closed += (s, e) => _mainWindow = null;
                 _mainWindow.Show();
             }
